@@ -52,16 +52,18 @@ const isGeo = async (lang,contributions) => {
       if (e.geo.coordinates !== false) {
         e.geo = e.geo.coordinates[0];
       } else if (e.geo.mapdata !== false) {
-        e.geo = e.geo.mapdata;
-        console.log(e.geo);
+        e.geo = JSON.parse(e.geo.mapdata[0]);
+        e.geo = e.geo[Object.keys(e.geo)[0]][0].geometry.coordinates
+        e.geo = {lat:e.geo[0],lon:e.geo[1]};
       } else {
         e.geo = false;
       }
-    } catch {
+    } catch(e) {
+      console.warn("failed normalizing geodata...",e);
       e.geo = false;
     }
     return e;
-  });//.filter((e) => (e.geo !== false));
+  }).filter((e) => (e.geo !== false));
 }
 
 export { getFeed,isGeo };
