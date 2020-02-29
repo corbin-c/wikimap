@@ -21,15 +21,12 @@
     <main>
 <div id="wikimap"></div>
 <script type="module">
-let langs = [["en","red"],
-  ["pt","green"],
-  ["ar","pink"],
-  ["es","yellow"],
-  ["fr","blue"],
-  ["de","brown"],
-  ["it","white"]];
 const RELOAD = 5000;
 import { getFeed,isGeo } from "./main.js";
+let normalizeHex = (str) => (str.length == 2) ? str:"0"+str;
+let getRandomColor = () => "#"+[0,0,0]
+  .map(e => normalizeHex(Math.ceil(Math.random()*256).toString(16))).join("");
+let wiki_langs = ["ace","af","ak","als","an","roa-rup","frp","ast","atj","gn","ay","az","bjn","gor","id","ms","bm","map-bms","jv","su","min","bcl","bi","bar","bs","br","zh-min-nan","ca","ceb","ch","cbk-zam","ny","sn","tum","cho","co","cy","da","se","pdc","de","nv","dsb","na","mh","et","eml","en","es","eo","ext","eu","ee","hif","fr","fy","ff","fur","fo","ga","gv","sm","gag","gl","gd","ki","ha","haw","ho","hsb","hr","io","ig","ilo","ia","ie","xh","zu","it","ik","kbp","kl","kr","pam","csb","kw","rw","rn","sw","kg","ht","ku","kj","jbo","lad","ltg","la","lv","to","lt","lij","li","lfn","ln","olo","lg","lmo","lb","hu","mg","mt","mwl","mus","cdo","mi","fj","nap","nl","nds-nl","frr","pih","no","nn","nrm","nov","nah","cr","oc","om","ng","hz","uz","pag","pap","jam","pcd","pms","nds","pl","pt","pfl","aa","kaa","crh","ty","ksh","rmy","ro","rm","qu","sc","sco","stq","st","nso","tn","sq","scn","simple","ss","sk","sl","so","srn","sh","fi","sv","sg","tl","kab","roa-tara","tet","din","vi","tpi","chy","ve","tw","tk","tr","za","vep","vo","vec","fiu-vro","wa","vls","war","wo","ts","yo","diq","zea","ang","is","cs","szl","bat-smg","el","pnt","av","ady","kbd","ab","ba","be","be-tarask","bxr","bg","inh","os","kv","krc","ky","mrj","lbe","lez","mk","mdf","mn","ce","mhr","koi","rue","ru","sah","cu","sr","tt","tg","tyv","udm","uk","xal","cv","myv","kk","hy","yi","he","ug","ur","ar","azb","sd","fa","lrc","mzn","arz","pnb","ps","ckb","glk","arc","dv","ks","gom","dty","new","ne","pi","bh","mr","mai","sa","hi","as","bn","bpy","pa","gu","or","ta","te","kn","tcy","ml","si","th","lo","dz","bo","my","xmf","ka","ti","am","iu","km","bug","sat","zh","wuu","hak","zh-classical","ja","zh-yue","gan","ii","chr","ko","got"];
 let contributions = [];
 let size = document.querySelector("main").getBoundingClientRect();
 document.querySelector("#wikimap")
@@ -45,11 +42,20 @@ L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_toke
   zoomOffset: -1
 }).addTo(map);
 
+let wait =  (t) => {
+  return new Promise((resolve,reject) => {
+    setTimeout(() => { resolve(); },t)
+  })
+}
+
 let draw = (async (lang,color,last_upd) => {
+  if (!last_upd) {
+    wiki_langs.map(e => contributions.push({lang:e,contributions:[]}));
+  }
   setTimeout(() => { draw(lang,color,feed.update); },RELOAD);
   let feed = await getFeed(lang,last_upd);
   feed.contributions = await isGeo(lang,feed.contributions);
-  feed.contributions.map(e => {
+  for (let e of feed.contributions) {
     if (typeof contributions.find(c => c.id == e.id) === "undefined") {
       e.circle = L.circleMarker([e.geo.lat, e.geo.lon], {
         color: "black",
@@ -57,13 +63,25 @@ let draw = (async (lang,color,last_upd) => {
         fillOpacity: 1,
         radius: 5
       }).addTo(map);
+      console.log(e.circle)
       e.circle.bindPopup("<a href='https://"+lang+".wikipedia.org/wiki/"+
         e.title+"' title='view on wikipedia'>"+e.title+"</a>");
-      contributions.push(e);
+      contributions.find(e => e.lang == lang).contributions.push(e);
+      if (contributions.find(e => e.lang == lang).contributions.length > 50) {
+        map.removeLayer(contributions.find(e => e.lang == lang).contributions[0].circle);
+        contributions.find(e => e.lang == lang).contributions =
+          contributions.find(e => e.lang == lang).contributions.slice(1);
+      }
     }
-  });
+    await wait(100);
+  };
 });
-langs.map(e => draw(...e,false));
+(async () => {
+  for (let e of wiki_langs) {
+    draw(e,getRandomColor(),false);
+    await wait(100);
+  }
+})()
 </script>
     </main>
     <footer>

@@ -9,3 +9,21 @@ header {
 footer {
   margin-top: 0px;
 }
+path {
+  animation-name: incoming;
+  animation-duration: 1s;
+}
+@keyframes incoming {
+  0% {
+    stroke-width:0;
+    stroke: black;
+  }
+  50% {
+    stroke-width: 20px;
+    stroke: #DDDD00;
+  }
+  100% {
+    stroke-width: 2px;
+    stroke: black;
+  }
+}
