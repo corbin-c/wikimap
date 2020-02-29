@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WikiMap</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../style.css" />
+    <link rel="stylesheet" href="style.css" />
+    <script defer type="module" src="../menu.js"></script>
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+   integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+   crossorigin=""/>
+   <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+   integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+   crossorigin=""></script>
+   <!-- End -->
+  </head>
+  <body>
+    <header><h1>WikiMap</h1></header>
+    <main>
+<div id="wikimap"></div>
+<script type="module">
+let langs = [["en","red"],
+  ["pt","green"],
+  ["ar","pink"],
+  ["es","yellow"],
+  ["fr","blue"],
+  ["de","brown"],
+  ["it","white"]];
+const RELOAD = 5000;
+import { getFeed,isGeo } from "./main.js";
+let contributions = [];
+let size = document.querySelector("main").getBoundingClientRect();
+document.querySelector("#wikimap")
+  .setAttribute("style","width: "+size.width+"px; height: "+size.height+"px;");
+const map = L.map('wikimap').setView([20, 0], 2.5);
+L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiY29yYmluLWMiLCJhIjoiY2s3N3BtdnU1MDNnZDNrbXBmaGVzbnNuOSJ9.Bjzgf_LPzT_9EQ4Mtm-G7A', {
+  maxZoom: 18,
+  attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+    '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+    'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+  id: 'mapbox/satellite-v9',
+  tileSize: 512,
+  zoomOffset: -1
+}).addTo(map);
+
+let draw = (async (lang,color,last_upd) => {
+  setTimeout(() => { draw(lang,color,feed.update); },RELOAD);
+  let feed = await getFeed(lang,last_upd);
+  feed.contributions = await isGeo(lang,feed.contributions);
+  feed.contributions.map(e => {
+    if (typeof contributions.find(c => c.id == e.id) === "undefined") {
+      e.circle = L.circleMarker([e.geo.lat, e.geo.lon], {
+        color: "black",
+        fillColor: color,
+        fillOpacity: 1,
+        radius: 5
+      }).addTo(map);
+      e.circle.bindPopup("<a href='https://"+lang+".wikipedia.org/wiki/"+
+        e.title+"' title='view on wikipedia'>"+e.title+"</a>");
+      contributions.push(e);
+    }
+  });
+});
+langs.map(e => draw(...e,false));
+</script>
+    </main>
+    <footer>
+    </footer>
+  </body>
+</html>
