@@ -17,6 +17,7 @@ const getFeed = async (lang,date=false) => {
   };
   return feed;
 }
+
 let getProperties = async (lang,titles,types) => {
   let properties = "https://"+lang+GEO+titles.join("|")+"&prop="+types.join("|");
   properties = await fetch(properties);
@@ -34,4 +35,13 @@ let getProperties = async (lang,titles,types) => {
   });
 };
 
-export { getFeed };
+const isGeo = async (lang,contributions) => {
+  let geo = await getProperty(
+    lang,
+    contributions.map(e => e.title),
+    ["mapdata","coordinates"]
+  );
+  console.log(geo);
+}
+
+export { getFeed,isGeo };
