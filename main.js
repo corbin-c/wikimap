@@ -2,7 +2,12 @@ const FEED = ".wikipedia.org/w/api.php?action=feedrecentchanges&hidebots=1&hidec
 const GEO = ".wikipedia.org/w/api.php?action=query&format=json&origin=*&utf8&titles=";
 
 const getFeed = async (lang,date=false) => {
-  let getId = (url) => url.split("&diff=")[1].split("&oldid")[0];
+  let getId = (url) => {
+    try {
+     url = url.split("&diff=")[1].split("&oldid")[0];
+    } catch { console.log(url) }
+    return url;
+  }
   let feed = "https://"+lang+FEED
   feed += ((date !== false)?"&from="+date:"")
   feed = await fetch(feed);
